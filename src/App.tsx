@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import * as Slider from '@radix-ui/react-slider'
 import './App.css'
 
 // Helper functions for color space conversions
@@ -165,147 +166,200 @@ function App() {
   }, [exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess])
 
   return (
-    <div style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>LUT Editor</h1>
-      
-      <div style={{ marginBottom: '30px' }}>
-        <h2>Preview</h2>
-        {lutBase64 && (
-          <img 
-            src={lutBase64} 
-            alt="LUT Preview" 
-            style={{ 
-              width: '768px', 
-              height: '48px', 
-              imageRendering: 'pixelated',
-              border: '1px solid #ccc'
-            }} 
-          />
-        )}
+    <div className="flex h-screen w-screen bg-gray-900 text-white">
+      {/* Left Sidebar with Controls and Preview */}
+      <div className="w-80 bg-gray-800 flex flex-col">
+        {/* Fixed Header with Title and Preview */}
+        <div className="p-6 border-b border-gray-700">
+          <h1 className="text-2xl font-bold mb-4">LUT Editor</h1>
+          
+          {/* LUT Preview */}
+          {lutBase64 && (
+            <img 
+              src={lutBase64} 
+              alt="LUT Preview" 
+              className="w-full border border-gray-700 rounded"
+              style={{ imageRendering: 'pixelated' }}
+            />
+          )}
+        </div>
+
+        {/* Scrollable Controls */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-2">
+          {/* Exposure */}
+          <div>
+            <div className="flex justify-between mb-1">
+              <label className="text-xs font-medium">Exposure</label>
+              <span className="text-xs text-gray-400">{exposure.toFixed(2)}</span>
+            </div>
+            <Slider.Root
+              className="relative flex items-center select-none touch-none w-full h-4"
+              value={[exposure]}
+              onValueChange={(value) => setExposure(value[0])}
+              min={-2}
+              max={2}
+              step={0.1}
+            >
+              <Slider.Track className="bg-gray-700 relative grow rounded-full h-1">
+                <Slider.Range className="absolute bg-blue-500 rounded-full h-full" />
+              </Slider.Track>
+              <Slider.Thumb className="block w-4 h-4 bg-white rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </Slider.Root>
+          </div>
+
+          {/* Brightness */}
+          <div>
+            <div className="flex justify-between mb-1">
+              <label className="text-xs font-medium">Brightness</label>
+              <span className="text-xs text-gray-400">{brightness.toFixed(2)}</span>
+            </div>
+            <Slider.Root
+              className="relative flex items-center select-none touch-none w-full h-4"
+              value={[brightness]}
+              onValueChange={(value) => setBrightness(value[0])}
+              min={0.25}
+              max={1.75}
+              step={0.01}
+            >
+              <Slider.Track className="bg-gray-700 relative grow rounded-full h-1">
+                <Slider.Range className="absolute bg-blue-500 rounded-full h-full" />
+              </Slider.Track>
+              <Slider.Thumb className="block w-4 h-4 bg-white rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </Slider.Root>
+          </div>
+
+          {/* Contrast */}
+          <div>
+            <div className="flex justify-between mb-1">
+              <label className="text-xs font-medium">Contrast</label>
+              <span className="text-xs text-gray-400">{contrast.toFixed(2)}</span>
+            </div>
+            <Slider.Root
+              className="relative flex items-center select-none touch-none w-full h-4"
+              value={[contrast]}
+              onValueChange={(value) => setContrast(value[0])}
+              min={-2}
+              max={4}
+              step={0.1}
+            >
+              <Slider.Track className="bg-gray-700 relative grow rounded-full h-1">
+                <Slider.Range className="absolute bg-blue-500 rounded-full h-full" />
+              </Slider.Track>
+              <Slider.Thumb className="block w-4 h-4 bg-white rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </Slider.Root>
+          </div>
+
+          {/* Hue */}
+          <div>
+            <div className="flex justify-between mb-1">
+              <label className="text-xs font-medium">Hue</label>
+              <span className="text-xs text-gray-400">{hue.toFixed(0)}°</span>
+            </div>
+            <Slider.Root
+              className="relative flex items-center select-none touch-none w-full h-4"
+              value={[hue]}
+              onValueChange={(value) => setHue(value[0])}
+              min={-180}
+              max={180}
+              step={1}
+            >
+              <Slider.Track className="bg-gray-700 relative grow rounded-full h-1">
+                <Slider.Range className="absolute bg-blue-500 rounded-full h-full" />
+              </Slider.Track>
+              <Slider.Thumb className="block w-4 h-4 bg-white rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </Slider.Root>
+          </div>
+
+          {/* Saturation */}
+          <div>
+            <div className="flex justify-between mb-1">
+              <label className="text-xs font-medium">Saturation</label>
+              <span className="text-xs text-gray-400">{saturation.toFixed(2)}</span>
+            </div>
+            <Slider.Root
+              className="relative flex items-center select-none touch-none w-full h-4"
+              value={[saturation]}
+              onValueChange={(value) => setSaturation(value[0])}
+              min={0}
+              max={2}
+              step={0.1}
+            >
+              <Slider.Track className="bg-gray-700 relative grow rounded-full h-1">
+                <Slider.Range className="absolute bg-blue-500 rounded-full h-full" />
+              </Slider.Track>
+              <Slider.Thumb className="block w-4 h-4 bg-white rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </Slider.Root>
+          </div>
+
+          {/* Value */}
+          <div>
+            <div className="flex justify-between mb-1">
+              <label className="text-xs font-medium">Value</label>
+              <span className="text-xs text-gray-400">{value.toFixed(2)}</span>
+            </div>
+            <Slider.Root
+              className="relative flex items-center select-none touch-none w-full h-4"
+              value={[value]}
+              onValueChange={(value) => setValue(value[0])}
+              min={0}
+              max={2}
+              step={0.1}
+            >
+              <Slider.Track className="bg-gray-700 relative grow rounded-full h-1">
+                <Slider.Range className="absolute bg-blue-500 rounded-full h-full" />
+              </Slider.Track>
+              <Slider.Thumb className="block w-4 h-4 bg-white rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </Slider.Root>
+          </div>
+
+          {/* Vibrancy */}
+          <div>
+            <div className="flex justify-between mb-1">
+              <label className="text-xs font-medium">Vibrancy</label>
+              <span className="text-xs text-gray-400">{vibrancy.toFixed(2)}</span>
+            </div>
+            <Slider.Root
+              className="relative flex items-center select-none touch-none w-full h-4"
+              value={[vibrancy]}
+              onValueChange={(value) => setVibrancy(value[0])}
+              min={0}
+              max={2}
+              step={0.1}
+            >
+              <Slider.Track className="bg-gray-700 relative grow rounded-full h-1">
+                <Slider.Range className="absolute bg-blue-500 rounded-full h-full" />
+              </Slider.Track>
+              <Slider.Thumb className="block w-4 h-4 bg-white rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </Slider.Root>
+          </div>
+
+          {/* Cross Process */}
+          <div>
+            <div className="flex justify-between mb-1">
+              <label className="text-xs font-medium">Cross Process</label>
+              <span className="text-xs text-gray-400">{crossProcess.toFixed(2)}</span>
+            </div>
+            <Slider.Root
+              className="relative flex items-center select-none touch-none w-full h-4"
+              value={[crossProcess]}
+              onValueChange={(value) => setCrossProcess(value[0])}
+              min={0}
+              max={1}
+              step={0.1}
+            >
+              <Slider.Track className="bg-gray-700 relative grow rounded-full h-1">
+                <Slider.Range className="absolute bg-blue-500 rounded-full h-full" />
+              </Slider.Track>
+              <Slider.Thumb className="block w-4 h-4 bg-white rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </Slider.Root>
+          </div>
+        </div>
+        </div>
       </div>
 
-      <div style={{ marginBottom: '30px' }}>
-        <h2>Controls</h2>
-        
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px' }}>
-            Exposure: {exposure.toFixed(2)}
-          </label>
-          <input 
-            type="range" 
-            min="-2" 
-            max="2" 
-            step="0.1" 
-            value={exposure}
-            onChange={(e) => setExposure(parseFloat(e.target.value))}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px' }}>
-            Brightness: {brightness.toFixed(2)}
-          </label>
-          <input 
-            type="range" 
-            min="0.25" 
-            max="1.75" 
-            step="0.01" 
-            value={brightness}
-            onChange={(e) => setBrightness(parseFloat(e.target.value))}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px' }}>
-            Contrast: {contrast.toFixed(2)}
-          </label>
-          <input 
-            type="range" 
-            min="-2" 
-            max="4" 
-            step="0.1" 
-            value={contrast}
-            onChange={(e) => setContrast(parseFloat(e.target.value))}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px' }}>
-            Hue: {hue.toFixed(0)}
-          </label>
-          <input 
-            type="range" 
-            min="-180" 
-            max="180" 
-            step="1" 
-            value={hue}
-            onChange={(e) => setHue(parseFloat(e.target.value))}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px' }}>
-            Saturation: {saturation.toFixed(2)}
-          </label>
-          <input 
-            type="range" 
-            min="0" 
-            max="2" 
-            step="0.1" 
-            value={saturation}
-            onChange={(e) => setSaturation(parseFloat(e.target.value))}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px' }}>
-            Value: {value.toFixed(2)}
-          </label>
-          <input 
-            type="range" 
-            min="0" 
-            max="2" 
-            step="0.1" 
-            value={value}
-            onChange={(e) => setValue(parseFloat(e.target.value))}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px' }}>
-            Vibrancy: {vibrancy.toFixed(2)}
-          </label>
-          <input 
-            type="range" 
-            min="0" 
-            max="2" 
-            step="0.1" 
-            value={vibrancy}
-            onChange={(e) => setVibrancy(parseFloat(e.target.value))}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px' }}>
-            Cross Process: {crossProcess.toFixed(2)}
-          </label>
-          <input 
-            type="range" 
-            min="0" 
-            max="1" 
-            step="0.1" 
-            value={crossProcess}
-            onChange={(e) => setCrossProcess(parseFloat(e.target.value))}
-            style={{ width: '100%' }}
-          />
-        </div>
+      {/* Right Side - Empty */}
+      <div className="flex-1 bg-gray-900">
       </div>
     </div>
   )
