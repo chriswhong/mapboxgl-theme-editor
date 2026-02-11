@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
-
-interface Point {
-  x: number
-  y: number
-}
+import type { Point } from './utils/colorUtils'
 
 interface ColorCurveProps {
   color: string
@@ -20,6 +16,8 @@ export default function ColorCurve({ color, label, points, onChange }: ColorCurv
   const cameraRef = useRef<THREE.OrthographicCamera | null>(null)
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [draggedMidpointIndex, setDraggedMidpointIndex] = useState<number | null>(null)
+  const [aspectRatio, setAspectRatio] = useState(1)
 
   // Initialize Three.js scene
   useEffect(() => {
@@ -34,7 +32,8 @@ export default function ColorCurve({ color, label, points, onChange }: ColorCurv
     sceneRef.current = scene
 
     // Camera (orthographic for 2D)
-    const camera = new THREE.OrthographicCamera(0, 1, 1, 0, 0.1, 10)
+    const aspectRatio = width / height
+    const camera = new THREE.OrthographicCamera(0, aspectRatio, 1, 0, 0.1, 10)
     camera.position.z = 1
     cameraRef.current = camera
 
@@ -43,6 +42,9 @@ export default function ColorCurve({ color, label, points, onChange }: ColorCurv
     renderer.setSize(width, height)
     renderer.setPixelRatio(window.devicePixelRatio)
     rendererRef.current = renderer
+
+    // Calculate aspect ratio for proper circle rendering
+    setAspectRatio(width / height)
 
     return () => {
       renderer.dispose()
@@ -63,7 +65,7 @@ export default function ColorCurve({ color, label, points, onChange }: ColorCurv
     }
 
     // Create curve from points using CatmullRomCurve3
-    const curvePoints = points.map(p => new THREE.Vector3(p.x, p.y, 0))
+    const curvePoints = points.map(p => new THREE.Vector3(p.x * aspectRatio, p.y, 0))
     const curve = new THREE.CatmullRomCurve3(curvePoints)
     curve.curveType = 'catmullrom'
     curve.tension = 0.5
@@ -84,14 +86,14 @@ export default function ColorCurve({ color, label, points, onChange }: ColorCurv
       const y = i * 0.25
       const gridGeometry = new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(0, y, -0.1),
-        new THREE.Vector3(1, y, -0.1)
+        new THREE.Vector3(aspectRatio, y, -0.1)
       ])
       scene.add(new THREE.Line(gridGeometry, gridMaterial))
     }
     
     // Vertical grid lines
     for (let i = 0; i <= 4; i++) {
-      const x = i * 0.25
+      const x = i * 0.25 * aspectRatio
       const gridGeometry = new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(x, 0, -0.1),
         new THREE.Vector3(x, 1, -0.1)
@@ -102,27 +104,63 @@ export default function ColorCurve({ color, label, points, onChange }: ColorCurv
     // Add border
     const borderGeometry = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3(1, 1, 0),
+      new THREE.Vector3(aspectRatio, 0, 0),
+      new THREE.Vector3(aspectRatio, 1, 0),
       new THREE.Vector3(0, 1, 0),
       new THREE.Vector3(0, 0, 0)
     ])
     const borderMaterial = new THREE.LineBasicMaterial({ color: 0x4b5563 })
     scene.add(new THREE.Line(borderGeometry, borderMaterial))
 
-    // Add control points
+    // Add midpoint circles (small circles between control points)
+    for (let i = 0; i < points.length - 1; i++) {
+      const p1 = points[i]
+      const p2 = points[i + 1]
+      
+      // Get midpoint along the curve
+      const t = (p1.x + p2.x) / 2
+      const curvePoint = curve.getPointAt((i + 0.5) / (points.length - 1))
+      
+      // Draw small circle (white stroke, transparent fill)
+      const midGeometry = new THREE.CircleGeometry(0.024, 16)
+      const midMaterial = new THREE.MeshBasicMaterial({ 
+        color: draggedMidpointIndex === i ? 0xffffff : 0x1f2937,
+        transparent: true,
+        opacity: draggedMidpointIndex === i ? 1 : 0.5
+      })
+      const midCircle = new THREE.Mesh(midGeometry, midMaterial)
+      midCircle.position.set(curvePoint.x, curvePoint.y, 0.09)
+      scene.add(midCircle)
+      
+      // Add white stroke for midpoint
+      const midStrokeGeometry = new THREE.RingGeometry(0.024, 0.030, 16)
+      const midStrokeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff })
+      const midStroke = new THREE.Mesh(midStrokeGeometry, midStrokeMaterial)
+      midStroke.position.set(curvePoint.x, curvePoint.y, 0.09)
+      scene.add(midStroke)
+    }
+
+    // Add control points (larger circles with white stroke)
     points.forEach((point, index) => {
-      const geometry = new THREE.CircleGeometry(0.02, 16)
+      // Main circle
+      const geometry = new THREE.CircleGeometry(0.04, 32)
       const material = new THREE.MeshBasicMaterial({ 
         color: draggedIndex === index ? 0xffffff : color 
       })
       const circle = new THREE.Mesh(geometry, material)
-      circle.position.set(point.x, point.y, 0.1)
+      circle.position.set(point.x * aspectRatio, point.y, 0.1)
       scene.add(circle)
+      
+      // White stroke
+      const strokeGeometry = new THREE.RingGeometry(0.04, 0.05, 32)
+      const strokeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff })
+      const stroke = new THREE.Mesh(strokeGeometry, strokeMaterial)
+      stroke.position.set(point.x * aspectRatio, point.y, 0.1)
+      scene.add(stroke)
     })
 
     renderer.render(scene, camera)
-  }, [points, color, draggedIndex])
+  }, [points, color, draggedIndex, draggedMidpointIndex, aspectRatio])
 
   // Handle mouse interactions
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -132,7 +170,27 @@ export default function ColorCurve({ color, label, points, onChange }: ColorCurv
     const x = (e.clientX - rect.left) / rect.width
     const y = 1 - (e.clientY - rect.top) / rect.height // Flip Y
 
-    // Find closest point
+    // Check for midpoint clicks first
+    const curvePoints = points.map(p => new THREE.Vector3(p.x * aspectRatio, p.y, 0))
+    const curve = new THREE.CatmullRomCurve3(curvePoints)
+    curve.curveType = 'catmullrom'
+    curve.tension = 0.5
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const curvePoint = curve.getPointAt((i + 0.5) / (points.length - 1))
+      const dist = Math.sqrt(((curvePoint.x / aspectRatio) - x) ** 2 + (curvePoint.y - y) ** 2)
+      if (dist < 0.06) {
+        setDraggedMidpointIndex(i)
+        // Insert new point at the midpoint
+        const newPoints = [...points]
+        newPoints.splice(i + 1, 0, { x: curvePoint.x / aspectRatio, y: curvePoint.y })
+        onChange(newPoints)
+        setDraggedIndex(i + 1)
+        return
+      }
+    }
+
+    // Find closest control point
     let closestIndex = 0
     let closestDist = Infinity
     points.forEach((point, index) => {
@@ -143,7 +201,7 @@ export default function ColorCurve({ color, label, points, onChange }: ColorCurv
       }
     })
 
-    if (closestDist < 0.05) {
+    if (closestDist < 0.10) {
       setDraggedIndex(closestIndex)
     }
   }
@@ -169,6 +227,7 @@ export default function ColorCurve({ color, label, points, onChange }: ColorCurv
 
   const handleMouseUp = () => {
     setDraggedIndex(null)
+    setDraggedMidpointIndex(null)
   }
 
   return (
