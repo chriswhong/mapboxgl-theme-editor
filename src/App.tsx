@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react'
 import * as Slider from '@radix-ui/react-slider'
+import ColorCurve from './ColorCurve'
 import './App.css'
+
+interface Point {
+  x: number
+  y: number
+}
 
 // Helper functions for color space conversions
 const rgbToHsv = (r: number, g: number, b: number): [number, number, number] => {
@@ -50,12 +56,54 @@ function App() {
   const [hue, setHue] = useState(0)
   const [saturation, setSaturation] = useState(1)
   const [value, setValue] = useState(1)
-  const [vibrancy, setVibrancy] = useState(1)
+  const [vibrancy, setVibrancy] = useState(0)
   const [crossProcess, setCrossProcess] = useState(0)
   const [lutBase64, setLutBase64] = useState('')
+  const [processedImage, setProcessedImage] = useState('')
+  
+  // Initialize curve points (5 points evenly spaced)
+  const [redCurve, setRedCurve] = useState<Point[]>([
+    { x: 0, y: 0 },
+    { x: 0.25, y: 0.25 },
+    { x: 0.5, y: 0.5 },
+    { x: 0.75, y: 0.75 },
+    { x: 1, y: 1 }
+  ])
+  const [greenCurve, setGreenCurve] = useState<Point[]>([
+    { x: 0, y: 0 },
+    { x: 0.25, y: 0.25 },
+    { x: 0.5, y: 0.5 },
+    { x: 0.75, y: 0.75 },
+    { x: 1, y: 1 }
+  ])
+  const [blueCurve, setBlueCurve] = useState<Point[]>([
+    { x: 0, y: 0 },
+    { x: 0.25, y: 0.25 },
+    { x: 0.5, y: 0.5 },
+    { x: 0.75, y: 0.75 },
+    { x: 1, y: 1 }
+  ])
+
+  // Interpolate curve value for a given input (0-1)
+  const interpolateCurve = (input: number, curve: Point[]): number => {
+    // Clamp input to 0-1
+    input = Math.max(0, Math.min(1, input))
+    
+    // Find the two points that bracket this input value
+    for (let i = 0; i < curve.length - 1; i++) {
+      if (input >= curve[i].x && input <= curve[i + 1].x) {
+        // Linear interpolation between these two points
+        const t = (input - curve[i].x) / (curve[i + 1].x - curve[i].x)
+        return curve[i].y + t * (curve[i + 1].y - curve[i].y)
+      }
+    }
+    
+    // If we're beyond the last point, return the last y value
+    return curve[curve.length - 1].y
+  }
 
   // Generate 16x16x16 3D LUT cube based on all parameters
-  const generateLUT = (exp: number, bright: number, cont: number, h: number, sat: number, val: number, vib: number, cross: number): string => {
+  const generateLUT = (exp: number, bright: number, cont: number, h: number, sat: number, val: number, vib: number, cross: number, rCurve: Point[], gCurve: Point[], bCurve: Point[]): string => {
     const cubeSize = 16
     const canvas = document.createElement('canvas')
     // Layout: 16 slices horizontally, each slice is 16x16
@@ -141,6 +189,16 @@ function App() {
             blue += cross * (0.5 - luminance) * 0.3
           }
           
+          // Clamp before curve application
+          red = Math.max(0, Math.min(1, red))
+          green = Math.max(0, Math.min(1, green))
+          blue = Math.max(0, Math.min(1, blue))
+          
+          // Apply color curves
+          red = interpolateCurve(red, rCurve)
+          green = interpolateCurve(green, gCurve)
+          blue = interpolateCurve(blue, bCurve)
+          
           // Final clamp
           red = Math.max(0, Math.min(1, red))
           green = Math.max(0, Math.min(1, green))
@@ -159,11 +217,102 @@ function App() {
     return canvas.toDataURL('image/png')
   }
 
-  // Update LUT when sliders change
+  // Apply LUT to an image
+  const applyLUTToImage = (imageSrc: string, lutDataURL: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const cubeSize = 16
+      
+      // Load the source image
+      const sourceImg = new Image()
+      sourceImg.crossOrigin = 'anonymous'
+      sourceImg.onload = () => {
+        // Load the LUT image
+        const lutImg = new Image()
+        lutImg.onload = () => {
+          // Create canvases for processing
+          const lutCanvas = document.createElement('canvas')
+          lutCanvas.width = cubeSize * cubeSize
+          lutCanvas.height = cubeSize
+          const lutCtx = lutCanvas.getContext('2d')
+          
+          if (!lutCtx) {
+            reject(new Error('Could not get LUT context'))
+            return
+          }
+          
+          // Draw LUT to canvas and get pixel data
+          lutCtx.drawImage(lutImg, 0, 0)
+          const lutImageData = lutCtx.getImageData(0, 0, lutCanvas.width, lutCanvas.height)
+          const lutData = lutImageData.data
+          
+          // Create canvas for the source image
+          const sourceCanvas = document.createElement('canvas')
+          sourceCanvas.width = sourceImg.width
+          sourceCanvas.height = sourceImg.height
+          const sourceCtx = sourceCanvas.getContext('2d')
+          
+          if (!sourceCtx) {
+            reject(new Error('Could not get source context'))
+            return
+          }
+          
+          // Draw source image and get pixel data
+          sourceCtx.drawImage(sourceImg, 0, 0)
+          const sourceImageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height)
+          const sourceData = sourceImageData.data
+          
+          // Apply LUT to each pixel
+          for (let i = 0; i < sourceData.length; i += 4) {
+            const r = sourceData[i]
+            const g = sourceData[i + 1]
+            const b = sourceData[i + 2]
+            
+            // Map RGB values to LUT cube coordinates
+            const rIndex = Math.round((r / 255) * (cubeSize - 1))
+            const gIndex = Math.round((g / 255) * (cubeSize - 1))
+            const bIndex = Math.round((b / 255) * (cubeSize - 1))
+            
+            // Calculate position in LUT image
+            const x = bIndex * cubeSize + rIndex
+            const y = gIndex
+            const lutIndex = (y * lutCanvas.width + x) * 4
+            
+            // Replace with LUT color
+            sourceData[i] = lutData[lutIndex]
+            sourceData[i + 1] = lutData[lutIndex + 1]
+            sourceData[i + 2] = lutData[lutIndex + 2]
+            // Keep original alpha
+          }
+          
+          // Put the modified data back
+          sourceCtx.putImageData(sourceImageData, 0, 0)
+          resolve(sourceCanvas.toDataURL('image/png'))
+        }
+        
+        lutImg.onerror = () => reject(new Error('Failed to load LUT image'))
+        lutImg.src = lutDataURL
+      }
+      
+      sourceImg.onerror = () => reject(new Error('Failed to load source image'))
+      sourceImg.src = imageSrc
+    })
+  }
+
+  // Update LUT when sliders or curves change
   useEffect(() => {
-    const base64 = generateLUT(exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess)
+    const base64 = generateLUT(exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess, redCurve, greenCurve, blueCurve)
     setLutBase64(base64)
-  }, [exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess])
+  }, [exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess, redCurve, greenCurve, blueCurve])
+
+  // Apply LUT to image whenever LUT changes
+  useEffect(() => {
+    if (lutBase64) {
+      const imagePath = new URL('./assets/image.png', import.meta.url).href
+      applyLUTToImage(imagePath, lutBase64)
+        .then(processed => setProcessedImage(processed))
+        .catch(err => console.error('Failed to apply LUT:', err))
+    }
+  }, [lutBase64])
 
   return (
     <div className="flex h-screen w-screen bg-gray-900 text-white">
@@ -331,6 +480,8 @@ function App() {
                 <Slider.Range className="absolute bg-blue-500 rounded-full h-full" />
               </Slider.Track>
               <Slider.Thumb className="block w-4 h-4 bg-white rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+          
             </Slider.Root>
           </div>
 
@@ -354,12 +505,43 @@ function App() {
               <Slider.Thumb className="block w-4 h-4 bg-white rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </Slider.Root>
           </div>
+          {/* Color Curves */}
+          <div className="mt-6 space-y-3">
+            <h3 className="text-sm font-semibold">Color Curves</h3>
+            <ColorCurve 
+              color="#ef4444" 
+              label="Red" 
+              points={redCurve} 
+              onChange={setRedCurve} 
+            />
+            <ColorCurve 
+              color="#22c55e" 
+              label="Green" 
+              points={greenCurve} 
+              onChange={setGreenCurve} 
+            />
+            <ColorCurve 
+              color="#3b82f6" 
+              label="Blue" 
+              points={blueCurve} 
+              onChange={setBlueCurve} 
+            />
+          </div>
         </div>
         </div>
       </div>
 
       {/* Right Side - Empty */}
       <div className="flex-1 bg-gray-900">
+        {processedImage && (
+          <div className="w-full h-full flex items-center justify-center p-8">
+            <img 
+              src={processedImage} 
+              alt="Preview with LUT applied" 
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+        )}
       </div>
     </div>
   )
