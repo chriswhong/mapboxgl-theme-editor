@@ -13,11 +13,17 @@ export interface LUTParameters {
   redCurve: Point[]
   greenCurve: Point[]
   blueCurve: Point[]
+  lift: { x: number; y: number }
+  liftStrength: number
+  gamma: { x: number; y: number }
+  gammaStrength: number
+  gain: { x: number; y: number }
+  gainStrength: number
 }
 
 // Generate 16x16x16 3D LUT cube as a base64 PNG
 export const generateLUT = (params: LUTParameters): string => {
-  const { exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess, redCurve, greenCurve, blueCurve } = params
+  const { exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess, redCurve, greenCurve, blueCurve, lift, liftStrength, gamma, gammaStrength, gain, gainStrength } = params
   const cubeSize = 16
   const canvas = document.createElement('canvas')
   
@@ -103,6 +109,41 @@ export const generateLUT = (params: LUTParameters): string => {
           green += crossProcess * (0.3 - luminance * 0.2)
           blue += crossProcess * (0.5 - luminance) * 0.3
         }
+        
+        // Apply lift, gamma, gain (color grading wheels)
+        // Convert {x, y} offsets to RGB color shifts, scaled by strength
+        const liftR = lift.x * 0.3 * liftStrength
+        const liftG = lift.y * 0.3 * liftStrength
+        const liftB = -(lift.x + lift.y) * 0.15 * liftStrength
+        
+        const gammaR = gamma.x * 0.3 * gammaStrength
+        const gammaG = gamma.y * 0.3 * gammaStrength
+        const gammaB = -(gamma.x + gamma.y) * 0.15 * gammaStrength
+        
+        const gainR = gain.x * 0.3 * gainStrength
+        const gainG = gain.y * 0.3 * gainStrength
+        const gainB = -(gain.x + gain.y) * 0.15 * gainStrength
+        
+        // Calculate luminance for range blending
+        const luminance = 0.299 * red + 0.587 * green + 0.114 * blue
+        
+        // Lift affects shadows (dark values)
+        const liftWeight = Math.pow(1 - luminance, 2)
+        red += liftR * liftWeight
+        green += liftG * liftWeight
+        blue += liftB * liftWeight
+        
+        // Gamma affects midtones (peaks at 0.5 luminance)
+        const gammaWeight = Math.sin(luminance * Math.PI)
+        red += gammaR * gammaWeight
+        green += gammaG * gammaWeight
+        blue += gammaB * gammaWeight
+        
+        // Gain affects highlights (bright values)
+        const gainWeight = Math.pow(luminance, 2)
+        red += gainR * gainWeight
+        green += gainG * gainWeight
+        blue += gainB * gainWeight
         
         // Clamp before curve application
         red = Math.max(0, Math.min(1, red))

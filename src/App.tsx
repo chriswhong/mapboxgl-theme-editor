@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { CopyIcon } from '@radix-ui/react-icons'
 import ColorCurve from './ColorCurve'
+import ColorWheel from './components/ColorWheel'
 import ParameterSlider from './components/ParameterSlider'
 import Map from './components/Map'
 import type { Point } from './utils/colorUtils'
@@ -17,6 +18,14 @@ function App() {
   const [vibrancy, setVibrancy] = useState(0)
   const [crossProcess, setCrossProcess] = useState(0)
   const [processedImage, setProcessedImage] = useState('')
+  
+  // Color wheel offsets for Lift, Gamma, Gain
+  const [lift, setLift] = useState({ x: 0, y: 0 })
+  const [liftStrength, setLiftStrength] = useState(1)
+  const [gamma, setGamma] = useState({ x: 0, y: 0 })
+  const [gammaStrength, setGammaStrength] = useState(1)
+  const [gain, setGain] = useState({ x: 0, y: 0 })
+  const [gainStrength, setGainStrength] = useState(1)
   
   // Initialize curve points (5 points evenly spaced)
   const [redCurve, setRedCurve] = useState<Point[]>([
@@ -54,9 +63,15 @@ function App() {
       crossProcess,
       redCurve,
       greenCurve,
-      blueCurve
+      blueCurve,
+      lift,
+      liftStrength,
+      gamma,
+      gammaStrength,
+      gain,
+      gainStrength
     })
-  }, [exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess, redCurve, greenCurve, blueCurve])
+  }, [exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess, redCurve, greenCurve, blueCurve, lift, liftStrength, gamma, gammaStrength, gain, gainStrength])
 
   // Apply LUT to image whenever LUT changes
   useEffect(() => {
@@ -202,6 +217,45 @@ const copyLUTToClipboard = async () => {
               points={blueCurve} 
               onChange={setBlueCurve} 
             />
+          </div>
+
+          {/* Color Wheels */}
+          <div className="mt-6 space-y-3">
+            <h3 className="text-sm font-semibold">Color Wheels</h3>
+            <div className="flex gap-3">
+              <ColorWheel 
+                label="Lift" 
+                offset={lift} 
+                onChange={setLift} 
+              />
+              <ColorWheel 
+                label="Gamma" 
+                offset={gamma} 
+                onChange={setGamma} 
+              />
+            </div>
+            <div className="flex gap-3">
+              <ColorWheel 
+                label="Gain" 
+                offset={gain} 
+                onChange={setGain} 
+              />
+            </div>
+          </div>
+
+          {/* Attribution */}
+          <div className="mt-6 pt-6 border-t border-gray-700">
+            <p className="text-xs text-gray-400">
+              Controls inspired by{' '}
+              <a 
+                href="https://o-l-l-i.github.io/lut-maker/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 underline"
+              >
+                https://o-l-l-i.github.io/lut-maker/
+              </a>
+            </p>
           </div>
         </div>
         </div>
