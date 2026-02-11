@@ -114,11 +114,7 @@ export default function ColorCurve({ color, label, points, onChange }: ColorCurv
 
     // Add midpoint circles (small circles between control points)
     for (let i = 0; i < points.length - 1; i++) {
-      const p1 = points[i]
-      const p2 = points[i + 1]
-      
       // Get midpoint along the curve
-      const t = (p1.x + p2.x) / 2
       const curvePoint = curve.getPointAt((i + 0.5) / (points.length - 1))
       
       // Draw small circle (white stroke, transparent fill)

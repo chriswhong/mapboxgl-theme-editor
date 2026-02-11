@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { CopyIcon } from '@radix-ui/react-icons'
 import ColorCurve from './ColorCurve'
 import ColorWheel from './components/ColorWheel'
 import ParameterSlider from './components/ParameterSlider'
 import Map from './components/Map'
 import type { Point } from './utils/colorUtils'
-import { generateLUT, applyLUTToImage } from './utils/lutUtils'
+import { generateLUT } from './utils/lutUtils'
 import './App.css'
 
 function App() {
@@ -17,15 +17,14 @@ function App() {
   const [value, setValue] = useState(1)
   const [vibrancy, setVibrancy] = useState(0)
   const [crossProcess, setCrossProcess] = useState(0)
-  const [processedImage, setProcessedImage] = useState('')
   
   // Color wheel offsets for Lift, Gamma, Gain
   const [lift, setLift] = useState({ x: 0, y: 0 })
-  const [liftStrength, setLiftStrength] = useState(1)
+  const [liftStrength] = useState(1)
   const [gamma, setGamma] = useState({ x: 0, y: 0 })
-  const [gammaStrength, setGammaStrength] = useState(1)
+  const [gammaStrength] = useState(1)
   const [gain, setGain] = useState({ x: 0, y: 0 })
-  const [gainStrength, setGainStrength] = useState(1)
+  const [gainStrength] = useState(1)
   
   // Initialize curve points (5 points evenly spaced)
   const [redCurve, setRedCurve] = useState<Point[]>([
@@ -73,15 +72,6 @@ function App() {
     })
   }, [exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess, redCurve, greenCurve, blueCurve, lift, liftStrength, gamma, gammaStrength, gain, gainStrength])
 
-  // Apply LUT to image whenever LUT changes
-  useEffect(() => {
-    if (lutBase64) {
-      const imagePath = new URL('./assets/image.png', import.meta.url).href
-      applyLUTToImage(imagePath, lutBase64)
-        .then(processed => setProcessedImage(processed))
-        .catch(err => console.error('Failed to apply LUT:', err))
-    }
-  }, [lutBase64])
 const copyLUTToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(lutBase64)
