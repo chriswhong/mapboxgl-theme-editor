@@ -114,14 +114,15 @@ export default function ColorCorrectionPanel({ corrections, onChange, onPickColo
                 />
                 <span className="text-sm ml-2">Color Correction</span>
               </div>
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation()
-                  removeCorrection(correction.id)
-                }}
+              <div
+                onClick={(e) => e.stopPropagation()}
               >
-                <TrashIcon className="w-4 h-4 text-red-400" />
-              </IconButton>
+                <IconButton
+                  onClick={() => removeCorrection(correction.id)}
+                >
+                  <TrashIcon className="w-4 h-4 text-red-400" />
+                </IconButton>
+              </div>
             </div>
           </ColorCorrectionPopover>
         )

@@ -282,7 +282,8 @@ const handlePickColor = (correctionId: string) => {
               <ColorWheel 
                 label="Gain" 
                 offset={gain} 
-                onChange={setGain} 
+                onChange={setGain}
+                onReset={() => setGain({ x: 0, y: 0 })}
               />
             </div>
           </div>

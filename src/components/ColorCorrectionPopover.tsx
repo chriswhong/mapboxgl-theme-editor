@@ -2,7 +2,6 @@ import * as Popover from '@radix-ui/react-popover'
 import { Cross2Icon, ArrowRightIcon, Pencil1Icon } from '@radix-ui/react-icons'
 import ParameterSlider from './ParameterSlider'
 import IconButton from './IconButton'
-import EyeDropperIcon from './EyeDropperIcon'
 import type { ColorCorrection } from '../utils/lutUtils'
 import { rgbToHsv, hsvToRgb } from '../utils/colorUtils'
 
@@ -26,16 +25,6 @@ export default function ColorCorrectionPopover({
   const rgbToHex = (r: number, g: number, b: number) => {
     const toHex = (n: number) => Math.round(n * 255).toString(16).padStart(2, '0')
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`
-  }
-
-  const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-    if (!result) return { r: 0.5, g: 0.5, b: 0.5 }
-    return {
-      r: parseInt(result[1], 16) / 255,
-      g: parseInt(result[2], 16) / 255,
-      b: parseInt(result[3], 16) / 255
-    }
   }
 
   const updateAdjustments = (adjustmentUpdates: Partial<ColorCorrection['adjustments']>) => {
