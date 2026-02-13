@@ -3,9 +3,10 @@ import { CopyIcon } from '@radix-ui/react-icons'
 import ColorCurve from './ColorCurve'
 import ColorWheel from './components/ColorWheel'
 import ParameterSlider from './components/ParameterSlider'
+import ColorCorrectionPanel from './components/ColorCorrectionPanel'
 import Map from './components/Map'
 import type { Point } from './utils/colorUtils'
-import { generateLUT } from './utils/lutUtils'
+import { generateLUT, type ColorCorrection } from './utils/lutUtils'
 import './App.css'
 
 function App() {
@@ -25,6 +26,10 @@ function App() {
   const [gammaStrength] = useState(1)
   const [gain, setGain] = useState({ x: 0, y: 0 })
   const [gainStrength] = useState(1)
+  
+  // Color corrections (targeted color adjustments)
+  const [colorCorrections, setColorCorrections] = useState<ColorCorrection[]>([])
+  const [pickingColorForId, setPickingColorForId] = useState<string | null>(null)
   
   // Initialize curve points (5 points evenly spaced)
   const [redCurve, setRedCurve] = useState<Point[]>([
@@ -68,9 +73,10 @@ function App() {
       gamma,
       gammaStrength,
       gain,
-      gainStrength
+      gainStrength,
+      colorCorrections
     })
-  }, [exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess, redCurve, greenCurve, blueCurve, lift, liftStrength, gamma, gammaStrength, gain, gainStrength])
+  }, [exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess, redCurve, greenCurve, blueCurve, lift, liftStrength, gamma, gammaStrength, gain, gainStrength, colorCorrections])
 
 const copyLUTToClipboard = async () => {
     try {
@@ -80,7 +86,24 @@ const copyLUTToClipboard = async () => {
       console.error('Failed to copy LUT:', err)
     }
   }
+const handlePickColor = (correctionId: string) => {
+    setPickingColorForId(correctionId)
+  }
 
+  const handleColorPicked = (color: { r: number; g: number; b: number }) => {
+    if (pickingColorForId) {
+      setColorCorrections(corrections =>
+        corrections.map(c =>
+          c.id === pickingColorForId
+            ? { ...c, targetColor: color }
+            : c
+        )
+      )
+      setPickingColorForId(null)
+    }
+  }
+
+  
   
   return (
     <div className="flex h-screen w-screen bg-gray-900 text-white">
@@ -233,6 +256,15 @@ const copyLUTToClipboard = async () => {
             </div>
           </div>
 
+          {/* Color Corrections */}
+          <div className="mt-6">
+            <ColorCorrectionPanel
+              corrections={colorCorrections}
+              onChange={setColorCorrections}
+              onPickColor={handlePickColor}
+            />
+          </div>
+
           {/* Attribution */}
           <div className="mt-6 pt-6 border-t border-gray-700">
             <p className="text-xs text-gray-400">
@@ -252,8 +284,12 @@ const copyLUTToClipboard = async () => {
       </div>
 
       {/* Right Side - Map */}
-      <div className="flex-1 bg-gray-900">
-        <Map lutBase64={lutBase64} />
+      <div className="flex-1 bg-gray-900 relative">
+        <Map 
+          lutBase64={lutBase64} 
+          isPickingColor={pickingColorForId !== null}
+          onColorPicked={handleColorPicked}
+        />
       </div>
     </div>
   )

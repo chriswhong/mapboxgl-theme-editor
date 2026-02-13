@@ -1,6 +1,19 @@
 import { rgbToHsv, hsvToRgb, interpolateCurve } from './colorUtils'
 import type { Point } from './colorUtils'
 
+export interface ColorCorrection {
+  id: string
+  enabled: true
+  targetColor: { r: number; g: number; b: number } // 0-1 range
+  tolerance: number // 0-1 range, how broadly to match
+  adjustments: {
+    hueShift: number // -180 to 180 degrees
+    saturationShift: number // -1 to 1
+    valueShift: number // -1 to 1
+    brightnessShift: number // -1 to 1
+  }
+}
+
 export interface LUTParameters {
   exposure: number
   brightness: number
@@ -19,11 +32,98 @@ export interface LUTParameters {
   gammaStrength: number
   gain: { x: number; y: number }
   gainStrength: number
+  colorCorrections: ColorCorrection[]
+}
+
+// Check if a color matches a target color within tolerance using HSV distance
+const matchesColorRange = (
+  r: number, g: number, b: number,
+  targetR: number, targetG: number, targetB: number,
+  tolerance: number
+): number => {
+  // Convert both to HSV for perceptual matching
+  const [h, s, v] = rgbToHsv(r, g, b)
+  const [targetH, targetS, targetV] = rgbToHsv(targetR, targetG, targetB)
+  
+  // Calculate distance in HSV space
+  // Hue is circular, so we need to handle wraparound
+  let hueDiff = Math.abs(h - targetH)
+  if (hueDiff > 0.5) hueDiff = 1 - hueDiff
+  
+  const satDiff = Math.abs(s - targetS)
+  const valDiff = Math.abs(v - targetV)
+  
+  // Weighted distance (hue is most important for color identity)
+  const distance = Math.sqrt(
+    hueDiff * hueDiff * 2 +
+    satDiff * satDiff +
+    valDiff * valDiff
+  ) / Math.sqrt(4) // Normalize to 0-1
+  
+  // Return strength (1 = perfect match, 0 = outside tolerance)
+  if (distance > tolerance) return 0
+  
+  // Smooth falloff at the edges
+  return Math.cos((distance / tolerance) * Math.PI * 0.5)
+}
+
+// Apply color corrections to RGB values
+const applyColorCorrections = (
+  r: number, g: number, b: number,
+  corrections: ColorCorrection[]
+): [number, number, number] => {
+  let red = r
+  let green = g
+  let blue = b
+  
+  for (const correction of corrections) {
+    if (!correction.enabled) continue
+    
+    const strength = matchesColorRange(
+      red, green, blue,
+      correction.targetColor.r, correction.targetColor.g, correction.targetColor.b,
+      correction.tolerance
+    )
+    
+    if (strength > 0) {
+      // Convert to HSV for adjustments
+      let [h, s, v] = rgbToHsv(red, green, blue)
+      
+      // Apply hue shift
+      if (correction.adjustments.hueShift !== 0) {
+        h = (h + correction.adjustments.hueShift / 360) % 1
+        if (h < 0) h += 1
+      }
+      
+      // Apply saturation shift
+      if (correction.adjustments.saturationShift !== 0) {
+        s = Math.max(0, Math.min(1, s + correction.adjustments.saturationShift * strength))
+      }
+      
+      // Apply value shift
+      if (correction.adjustments.valueShift !== 0) {
+        v = Math.max(0, Math.min(1, v + correction.adjustments.valueShift * strength))
+      }
+      
+      // Convert back to RGB
+      ;[red, green, blue] = hsvToRgb(h, s, v)
+      
+      // Apply brightness shift
+      if (correction.adjustments.brightnessShift !== 0) {
+        const brightnessMult = 1 + correction.adjustments.brightnessShift * strength
+        red = Math.max(0, Math.min(1, red * brightnessMult))
+        green = Math.max(0, Math.min(1, green * brightnessMult))
+        blue = Math.max(0, Math.min(1, blue * brightnessMult))
+      }
+    }
+  }
+  
+  return [red, green, blue]
 }
 
 // Generate 16x16x16 3D LUT cube as a base64 PNG
 export const generateLUT = (params: LUTParameters): string => {
-  const { exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess, redCurve, greenCurve, blueCurve, lift, liftStrength, gamma, gammaStrength, gain, gainStrength } = params
+  const { exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess, redCurve, greenCurve, blueCurve, lift, liftStrength, gamma, gammaStrength, gain, gainStrength, colorCorrections } = params
   const cubeSize = 16
   const canvas = document.createElement('canvas')
   
@@ -154,6 +254,11 @@ export const generateLUT = (params: LUTParameters): string => {
         red = interpolateCurve(red, redCurve)
         green = interpolateCurve(green, greenCurve)
         blue = interpolateCurve(blue, blueCurve)
+        
+        // Apply color corrections (targeted color adjustments)
+        if (colorCorrections && colorCorrections.length > 0) {
+          ;[red, green, blue] = applyColorCorrections(red, green, blue, colorCorrections)
+        }
         
         // Final clamp
         red = Math.max(0, Math.min(1, red))
