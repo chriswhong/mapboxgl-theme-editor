@@ -140,6 +140,7 @@ const handlePickColor = (correctionId: string) => {
               label="Exposure"
               value={exposure}
               onChange={setExposure}
+              onReset={() => setExposure(0)}
               min={-2}
               max={2}
               step={0.1}
@@ -149,6 +150,7 @@ const handlePickColor = (correctionId: string) => {
               label="Brightness"
               value={brightness}
               onChange={setBrightness}
+              onReset={() => setBrightness(1)}
               min={0.25}
               max={1.75}
               step={0.01}
@@ -158,6 +160,7 @@ const handlePickColor = (correctionId: string) => {
               label="Contrast"
               value={contrast}
               onChange={setContrast}
+              onReset={() => setContrast(1)}
               min={-2}
               max={4}
               step={0.1}
@@ -167,6 +170,7 @@ const handlePickColor = (correctionId: string) => {
               label="Hue"
               value={hue}
               onChange={setHue}
+              onReset={() => setHue(0)}
               min={-180}
               max={180}
               step={1}
@@ -177,6 +181,7 @@ const handlePickColor = (correctionId: string) => {
               label="Saturation"
               value={saturation}
               onChange={setSaturation}
+              onReset={() => setSaturation(1)}
               min={0}
               max={2}
               step={0.1}
@@ -186,6 +191,7 @@ const handlePickColor = (correctionId: string) => {
               label="Value"
               value={value}
               onChange={setValue}
+              onReset={() => setValue(1)}
               min={0}
               max={2}
               step={0.1}
@@ -195,6 +201,7 @@ const handlePickColor = (correctionId: string) => {
               label="Vibrancy"
               value={vibrancy}
               onChange={setVibrancy}
+              onReset={() => setVibrancy(0)}
               min={0}
               max={2}
               step={0.1}
@@ -204,6 +211,7 @@ const handlePickColor = (correctionId: string) => {
               label="Cross Process"
               value={crossProcess}
               onChange={setCrossProcess}
+              onReset={() => setCrossProcess(0)}
               min={0}
               max={1}
               step={0.1}
@@ -216,19 +224,40 @@ const handlePickColor = (correctionId: string) => {
               color="#ef4444" 
               label="Red" 
               points={redCurve} 
-              onChange={setRedCurve} 
+              onChange={setRedCurve}
+              onReset={() => setRedCurve([
+                { x: 0, y: 0 },
+                { x: 0.25, y: 0.25 },
+                { x: 0.5, y: 0.5 },
+                { x: 0.75, y: 0.75 },
+                { x: 1, y: 1 }
+              ])}
             />
             <ColorCurve 
               color="#22c55e" 
               label="Green" 
               points={greenCurve} 
-              onChange={setGreenCurve} 
+              onChange={setGreenCurve}
+              onReset={() => setGreenCurve([
+                { x: 0, y: 0 },
+                { x: 0.25, y: 0.25 },
+                { x: 0.5, y: 0.5 },
+                { x: 0.75, y: 0.75 },
+                { x: 1, y: 1 }
+              ])}
             />
             <ColorCurve 
               color="#3b82f6" 
               label="Blue" 
               points={blueCurve} 
-              onChange={setBlueCurve} 
+              onChange={setBlueCurve}
+              onReset={() => setBlueCurve([
+                { x: 0, y: 0 },
+                { x: 0.25, y: 0.25 },
+                { x: 0.5, y: 0.5 },
+                { x: 0.75, y: 0.75 },
+                { x: 1, y: 1 }
+              ])}
             />
           </div>
 
@@ -239,12 +268,14 @@ const handlePickColor = (correctionId: string) => {
               <ColorWheel 
                 label="Lift" 
                 offset={lift} 
-                onChange={setLift} 
+                onChange={setLift}
+                onReset={() => setLift({ x: 0, y: 0 })}
               />
               <ColorWheel 
                 label="Gamma" 
                 offset={gamma} 
-                onChange={setGamma} 
+                onChange={setGamma}
+                onReset={() => setGamma({ x: 0, y: 0 })}
               />
             </div>
             <div className="flex gap-3">

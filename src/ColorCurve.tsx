@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import ResetButton from './components/ResetButton'
 import type { Point } from './utils/colorUtils'
 
 interface ColorCurveProps {
@@ -7,9 +8,10 @@ interface ColorCurveProps {
   label: string
   points: Point[]
   onChange: (points: Point[]) => void
+  onReset?: () => void
 }
 
-export default function ColorCurve({ color, label, points, onChange }: ColorCurveProps) {
+export default function ColorCurve({ color, label, points, onChange, onReset }: ColorCurveProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const sceneRef = useRef<THREE.Scene | null>(null)
@@ -229,7 +231,10 @@ export default function ColorCurve({ color, label, points, onChange }: ColorCurv
   return (
     <div ref={containerRef}>
       <div className="flex justify-between mb-1">
-        <label className="text-xs font-medium">{label}</label>
+        <div className="flex items-center gap-1">
+          <label className="text-xs font-medium">{label}</label>
+          {onReset && <ResetButton onReset={onReset} />}
+        </div>
       </div>
       <canvas
         ref={canvasRef}

@@ -1,9 +1,11 @@
 import * as Slider from '@radix-ui/react-slider'
+import ResetButton from './ResetButton'
 
 interface ParameterSliderProps {
   label: string
   value: number
   onChange: (value: number) => void
+  onReset?: () => void
   min: number
   max: number
   step: number
@@ -14,6 +16,7 @@ export default function ParameterSlider({
   label,
   value,
   onChange,
+  onReset,
   min,
   max,
   step,
@@ -22,7 +25,10 @@ export default function ParameterSlider({
   return (
     <div>
       <div className="flex justify-between mb-1">
-        <label className="text-xs font-medium">{label}</label>
+        <div className="flex items-center gap-1">
+          <label className="text-xs font-medium">{label}</label>
+          {onReset && <ResetButton onReset={onReset} />}
+        </div>
         <span className="text-xs text-gray-400">{format(value)}</span>
       </div>
       <Slider.Root

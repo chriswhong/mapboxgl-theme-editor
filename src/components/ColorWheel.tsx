@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import ResetButton from './ResetButton'
 
 interface ColorWheelProps {
   label: string
   offset: { x: number; y: number } // -1 to 1 range
   onChange: (offset: { x: number; y: number }) => void
+  onReset?: () => void
 }
 
-export default function ColorWheel({ label, offset, onChange }: ColorWheelProps) {
+export default function ColorWheel({ label, offset, onChange, onReset }: ColorWheelProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const sceneRef = useRef<THREE.Scene | null>(null)
@@ -166,7 +168,10 @@ export default function ColorWheel({ label, offset, onChange }: ColorWheelProps)
   return (
     <div ref={containerRef}>
       <div className="flex justify-between mb-1">
-        <label className="text-xs font-medium">{label}</label>
+        <div className="flex items-center gap-1">
+          <label className="text-xs font-medium">{label}</label>
+          {onReset && <ResetButton onReset={onReset} />}
+        </div>
       </div>
       <canvas
         ref={canvasRef}

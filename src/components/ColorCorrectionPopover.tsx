@@ -127,6 +127,7 @@ export default function ColorCorrectionPopover({
               label="Tolerance"
               value={correction.tolerance}
               onChange={(v) => onChange({ tolerance: v })}
+              onReset={() => onChange({ tolerance: 0.3 })}
               min={0.05}
               max={1}
               step={0.05}
@@ -141,6 +142,7 @@ export default function ColorCorrectionPopover({
                 label="Hue Shift"
                 value={correction.adjustments.hueShift}
                 onChange={(v) => updateAdjustments({ hueShift: v })}
+                onReset={() => updateAdjustments({ hueShift: 0 })}
                 min={-180}
                 max={180}
                 step={1}
@@ -151,6 +153,7 @@ export default function ColorCorrectionPopover({
                 label="Saturation"
                 value={correction.adjustments.saturationShift}
                 onChange={(v) => updateAdjustments({ saturationShift: v })}
+                onReset={() => updateAdjustments({ saturationShift: 0 })}
                 min={-1}
                 max={1}
                 step={0.05}
@@ -161,6 +164,7 @@ export default function ColorCorrectionPopover({
                 label="Value"
                 value={correction.adjustments.valueShift}
                 onChange={(v) => updateAdjustments({ valueShift: v })}
+                onReset={() => updateAdjustments({ valueShift: 0 })}
                 min={-1}
                 max={1}
                 step={0.05}
@@ -171,6 +175,7 @@ export default function ColorCorrectionPopover({
                 label="Brightness"
                 value={correction.adjustments.brightnessShift}
                 onChange={(v) => updateAdjustments({ brightnessShift: v })}
+                onReset={() => updateAdjustments({ brightnessShift: 0 })}
                 min={-1}
                 max={1}
                 step={0.05}
