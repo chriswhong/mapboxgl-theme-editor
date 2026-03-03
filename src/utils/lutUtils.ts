@@ -121,15 +121,15 @@ const applyColorCorrections = (
   return [red, green, blue]
 }
 
-// Generate 16x16x16 3D LUT cube as a base64 PNG
+// Generate 32x32x32 3D LUT cube as a base64 PNG
 export const generateLUT = (params: LUTParameters): string => {
   const { exposure, brightness, contrast, hue, saturation, value, vibrancy, crossProcess, redCurve, greenCurve, blueCurve, lift, liftStrength, gamma, gammaStrength, gain, gainStrength, colorCorrections } = params
-  const cubeSize = 16
+  const cubeSize = 32
   const canvas = document.createElement('canvas')
   
-  // Layout: 16 slices horizontally, each slice is 16x16
-  canvas.width = cubeSize * cubeSize // 256 pixels wide
-  canvas.height = cubeSize // 16 pixels tall
+  // Layout: 32 slices horizontally, each slice is 32x32
+  canvas.width = cubeSize * cubeSize // 1024 pixels wide
+  canvas.height = cubeSize // 32 pixels tall
   const ctx = canvas.getContext('2d')
   
   if (!ctx) return ''
@@ -281,7 +281,7 @@ export const generateLUT = (params: LUTParameters): string => {
 // Apply LUT to an image
 export const applyLUTToImage = (imageSrc: string, lutDataURL: string): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const cubeSize = 16
+    const cubeSize = 32
     
     // Load the source image
     const sourceImg = new Image()
@@ -300,6 +300,10 @@ export const applyLUTToImage = (imageSrc: string, lutDataURL: string): Promise<s
           reject(new Error('Could not get LUT context'))
           return
         }
+        
+        // Set LUT canvas to match the LUT dimensions
+        lutCanvas.width = cubeSize * cubeSize
+        lutCanvas.height = cubeSize
         
         // Draw LUT to canvas and get pixel data
         lutCtx.drawImage(lutImg, 0, 0)
@@ -333,7 +337,7 @@ export const applyLUTToImage = (imageSrc: string, lutDataURL: string): Promise<s
           const gIndex = Math.round((g / 255) * (cubeSize - 1))
           const bIndex = Math.round((b / 255) * (cubeSize - 1))
           
-          // Calculate position in LUT image
+          // Calculate position in LUT image (horizontal layout)
           const x = bIndex * cubeSize + rIndex
           const y = gIndex
           const lutIndex = (y * lutCanvas.width + x) * 4

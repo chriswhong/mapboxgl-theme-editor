@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { CopyIcon } from '@radix-ui/react-icons'
+import { CopyIcon, DownloadIcon } from '@radix-ui/react-icons'
 import ColorCurve from './ColorCurve'
 import ColorWheel from './components/ColorWheel'
 import ParameterSlider from './components/ParameterSlider'
@@ -86,6 +86,16 @@ function App() {
       console.error('Failed to copy LUT:', err)
     }
   }
+
+  const downloadLUT = () => {
+    const link = document.createElement('a')
+    link.href = lutBase64
+    link.download = 'lut.png'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   const handlePickColor = (correctionId: string) => {
     setPickingColorForId(correctionId)
   }
@@ -122,29 +132,9 @@ function App() {
             </a>
             {' '}Theme Editor
           </h1>
-          <p className="text-xs text-gray-400 mb-6">
-            The Mapbox Standard Style accepts a base64-encoded 3D LUT (Look-Up Table) to apply complex color transformations. This editor allows you to create and customize your own LUT by adjusting various parameters like exposure, contrast, hue, saturation, and more. You can also define custom color curves and targeted color corrections for precise control over the final look of your map.
-
-            Once you're satisfied with your adjustments, simply copy the generated LUT as a base64 string and use it in your Mapbox style to transform the colors of your map layers.
+          <p className="text-xs text-gray-400">
+            The Mapbox Standard Style accepts a Look-Up Table (LUT) to apply complex color transformations. Use the controls below to adjust various parameters and see how the LUT affects the map in real-time.
           </p>
-          {/* LUT Preview */}
-          {lutBase64 && (
-            <div>
-              <img
-                src={lutBase64}
-                alt="LUT Preview"
-                className="w-full border border-gray-700 rounded"
-                style={{ imageRendering: 'pixelated' }}
-              />
-              <button
-                onClick={copyLUTToClipboard}
-                className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
-              >
-                <CopyIcon className="w-3 h-3" />
-                Copy LUT as Base64
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Scrollable Controls */}
@@ -336,6 +326,39 @@ function App() {
           isPickingColor={pickingColorForId !== null}
           onColorPicked={handleColorPicked}
         />
+
+        {/* Floating LUT Preview */}
+        {lutBase64 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-700 min-w-[500px]">
+            <h2 className="text-xs font-semibold mb-2 text-gray-300">LUT Preview</h2>
+
+            <img
+              src={lutBase64}
+              alt="LUT Preview"
+              className="w-full border border-gray-700 rounded mb-3"
+              style={{ imageRendering: 'pixelated' }}
+            />
+                        <p className="text-xs text-gray-400 mb-3">
+              You can download your custom LUT as a PNG to use in Mapbox Studio, or copy the Base64 string to use directly in your Mapbox GL JS or Mobile Maps SDK projects.
+            </p>
+            <div className="mt-2 flex gap-2">
+              <button
+                onClick={downloadLUT}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+              >
+                <DownloadIcon className="w-3 h-3" />
+                Download (PNG)
+              </button>
+              <button
+                onClick={copyLUTToClipboard}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+              >
+                <CopyIcon className="w-3 h-3" />
+                Copy (Base64 String)
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
